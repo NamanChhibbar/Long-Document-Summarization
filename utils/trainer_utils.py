@@ -38,8 +38,8 @@ class SummarizationDataset:
   ) -> None:
     # Check if texts and summaries are of same length
     # if summaries are provided
-    if summaries is not None:
-      assert len(texts) == len(summaries), 'Length of texts and summaries must be equal'
+    if summaries is not None and len(texts) != len(summaries):
+      raise ValueError('Length of "texts" and "summaries" must be equal')
     # This enables dynamic batching
     perm = np.argsort([count_words(text) for text in texts])
     texts = np.array(texts)[perm]
@@ -56,10 +56,8 @@ class SummarizationDataset:
       if summaries is not None:
         summary_batch = summaries[i*batch_size:(i+1)*batch_size].tolist()
         self.summary_batches[i] = summary_batch
-    # Use numpy array as a cache, if specified
-    self.cache = np.zeros(
-      self.num_batches, dtype=object
-    )
+    # Use numpy array as a cache
+    self.cache = np.zeros(num_batches, dtype=object)
     self.encoder = encoder
     self.batch_size = batch_size
     self.summary_max_tokens = summary_max_tokens
@@ -86,8 +84,11 @@ class SummarizationDataset:
       tokenizer = encoder.tokenizer
       summaries = summary_batches[ind]
       summ_encodings = tokenizer(
-        summaries, padding=True, max_length=self.summary_max_tokens,
-        truncation=True, return_tensors='pt'
+        summaries,
+        padding=True,
+        max_length=self.summary_max_tokens,
+        truncation=True,
+        return_tensors='pt'
       )['input_ids']
       # Set padding token ids to -100 (ignored id in attention)
       filt = summ_encodings == tokenizer.pad_token_id
@@ -116,7 +117,8 @@ class SummarizationDataset:
   def __next__(self) -> BatchEncoding:
     # Check if iterator is initialized
     it = self.it
-    assert it is not None, 'Iterator not initialized'
+    if it is not None:
+      raise ValueError('Iterator not initialized')
     # Check if iterations are completed
     if it == self.num_batches:
       raise StopIteration()
