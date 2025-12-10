@@ -50,7 +50,7 @@ class SummarizationDataset:
     self.text_batches = np.zeros(num_batches, dtype=object)
     self.summary_batches = None if summaries is None \
       else np.zeros(num_batches, dtype=object)
-    for i in range(self.num_batches):
+    for i in range(num_batches):
       text_batch = texts[i*batch_size:(i+1)*batch_size].tolist()
       self.text_batches[i] = text_batch
       if summaries is not None:
